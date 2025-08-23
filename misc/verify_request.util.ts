@@ -36,8 +36,6 @@ export function verify_request(roles: Array<'organiser' | 'attendee'>){
       const [session] = await db.query<[Session]>(surql`SELECT * FROM ONLY session WHERE id = ${new RecordId('session', payload.sid)} AND user ${new RecordId(payload.role, payload.id)} LIMIT 1;`)
       if(!session){ throw new HTTPException(401, { message: 'Session not found' }) }
       if(Date.now() > new Date(session.expires_at).valueOf()){ throw new HTTPException(401, { message: 'Your session has expired' }) }
-      const newExpiry = new Date( Date.now() + 1000*60*45 )
-      await db.query(surql`UPDATE type::record(${session.id.toString()}) SET expires_at = ${newExpiry};`)
     }
 
     if(payload.role === 'attendee'){
