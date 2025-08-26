@@ -169,26 +169,26 @@ attendee.post('/auth/finish', async c => {
 
   const connection = (await db.query<[ConnectsWith[]]>(surql`SELECT * FROM connects_with WHERE in = ${organiser.id} AND out = ${attendee.id};`))[0][0]
 
+  const attendee_id = attendee.id.id.toString()
+  const jwt_secret = Deno.env.get('JWT_SECRET')
+  const jwt_expiration = new Date(organiser.end_time)
+  if(!jwt_expiration || !jwt_secret){ throw new HTTPException(400, { message: 'Access token could not be generated' }) }
+  const encodedSecret =  encoder.encode(jwt_secret)
+
+  const { os, browser, device } = UAParser(c.req.header('User-Agent'))
+  const session_content: Partial<Session> = {
+    user: attendee.id,
+    browser: browser.name ? browser.name : 'Unknown',
+    device: device.type && device.vendor ? `${device.vendor} - ${device.type}` : 'Unknown',
+    os: os.name ? os.name : 'Unknown',
+    expires_at: new Date( organiser.end_time )
+  }
+
+  const [new_session] = await db.query<[Session]>(surql`CREATE ONLY session CONTENT ${session_content};`)
+
+  const token = await new SignJWT({ id: attendee_id, sid: new_session.id.id.toString(), role: 'attendee' }).setProtectedHeader({ alg: 'HS256' }).setIssuedAt().setExpirationTime(jwt_expiration).sign(encodedSecret)
+
   if(connection){
-    const attendee_id = attendee.id.id.toString()
-    const jwt_secret = Deno.env.get('JWT_SECRET')
-    const jwt_expiration = new Date(organiser.end_time)
-    if(!jwt_expiration || !jwt_secret){ throw new HTTPException(400, { message: 'Access token could not be generated' }) }
-    const encodedSecret =  encoder.encode(jwt_secret)
-
-    const { os, browser, device } = UAParser(c.req.header('User-Agent'))
-    const session_content: Partial<Session> = {
-      user: attendee.id,
-      browser: browser.name ? browser.name : 'Unknown',
-      device: device.type && device.vendor ? `${device.vendor} - ${device.type}` : 'Unknown',
-      os: os.name ? os.name : 'Unknown',
-      expires_at: new Date( organiser.end_time )
-    }
-
-    const [session] = await db.query<[Session]>(surql`CREATE ONLY session CONTENT ${session_content};`)
-
-    const token = await new SignJWT({ id: attendee_id, sid: session.id.id.toString(), role: 'attendee' }).setProtectedHeader({ alg: 'HS256' }).setIssuedAt().setExpirationTime(jwt_expiration).sign(encodedSecret)
-
     return c.json({
       approved: true,
       access_token: token,
@@ -199,7 +199,7 @@ attendee.post('/auth/finish', async c => {
   } else {
     return c.json({
       approved: false,
-      access_token: null,
+      access_token: token,
       connection_id: null,
       start_time: organiser.start_time,
       end_time: organiser.end_time
