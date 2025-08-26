@@ -31,7 +31,8 @@ organiser.get('/', verify_request(['organiser']), async c => {
   type Connection = {
     attendee_id: RecordId<string>,
     connection_id: RecordId<string>
-    response_tag: string
+    response_tag: string,
+    attendee_name: string
   }
 
   const [organiser] = (await db.query<[PartialOrganiser]>(surql`
@@ -49,7 +50,7 @@ organiser.get('/', verify_request(['organiser']), async c => {
   if(!organiser){ throw new HTTPException(404, { message: 'The meeting is not found' }) }
 
   const connection = (await db.query<[Connection[]]>(surql`
-    SELECT id as connection_id, out.id as attendee_id, out.response_tag as response_tag FROM connects_with WHERE in.id = ${new RecordId('organiser', user.id)};
+    SELECT id as connection_id, out.id as attendee_id, out.response_tag as response_tag, out.name as attendee_name FROM connects_with WHERE in.id = ${new RecordId('organiser', user.id)};
   `))[0][0]
 
   return c.json({...organiser, connection})
