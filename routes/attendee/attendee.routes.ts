@@ -20,14 +20,18 @@ const attendee = new Hono<{ Variables: {user: {id: string, table: 'attendee' | '
 attendee.get('/', verify_request(['attendee']), async c => {
   const user = c.get('user')
   const connection = (await db.query<[ConnectsWith[]]>(surql`SELECT * FROM connects_with WHERE out = ${new RecordId('attendee', user.id)};`))[0][0]
-  if(!connection){ throw new HTTPException(404, { message: 'No connection was found' }) }
-  const bridge = await db.select(connection.out)
+  
+  const organiser = await db.select<Organiser>(connection.in)
+  const attendee = await db.select<Attendee>(new RecordId('attendee', user.id))
   return c.json({
-    approved: true,
-    access_token: null,
-    connection_id: connection.id.id.toString(),
-    start_time: bridge.start_time,
-    end_time: bridge.end_time
+    approved: connection ? true : false,
+    connection_id: connection ? connection.id.id.toString() : null,
+    organiser_name: organiser.name,
+    meeting_tag: organiser.meeting_tag,
+    attendee_name: attendee.name,
+    response_tag: attendee.response_tag,
+    start_time: organiser.start_time,
+    end_time: organiser.end_time
   })
 })
 
