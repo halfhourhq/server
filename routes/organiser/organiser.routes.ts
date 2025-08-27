@@ -165,7 +165,7 @@ organiser.post('/auth/finish', async c => {
 
   const { meeting_tag, password_hash } = validation.data
 
-  const [organiser] = await db.query<[Organiser]>(surql`SELECT * FROM ONLY organiser WHERE public_code = ${meeting_tag} LIMIT 1;`)
+  const [organiser] = await db.query<[Organiser]>(surql`SELECT * FROM ONLY organiser WHERE meeting_tag = ${meeting_tag} LIMIT 1;`)
   if(!organiser){  throw new HTTPException(400,  { message: 'Organiser was not found' }) }
 
   const [session] = await db.query<[number]>(surql`RETURN count(SELECT * FROM session WHERE user = ${organiser.id});`)
