@@ -33,14 +33,14 @@ export function verify_request(roles: Array<'organiser' | 'attendee'>){
 
     if(payload.role === 'organiser'){
       if(!payload.sid){ throw new HTTPException(401, { message: 'Access denied' }) }
-      const [session] = await db.query<[Session]>(surql`SELECT * FROM ONLY session WHERE id = ${new RecordId('session', payload.sid)} AND user ${new RecordId(payload.role, payload.id)} LIMIT 1;`)
+      const [session] = await db.query<[Session]>(surql`SELECT * FROM ONLY session WHERE id = ${new RecordId('session', payload.sid)} AND user = ${new RecordId(payload.role, payload.id)} LIMIT 1;`)
       if(!session){ throw new HTTPException(401, { message: 'Session not found' }) }
       if(Date.now() > new Date(session.expires_at).valueOf()){ throw new HTTPException(401, { message: 'Your session has expired' }) }
     }
 
     if(payload.role === 'attendee'){
       if(!payload.sid){ throw new HTTPException(401, { message: 'Access denied' }) }
-      const [session] = await db.query<[Session]>(surql`SELECT * FROM ONLY session WHERE id = ${new RecordId('session', payload.sid)} AND user ${new RecordId(payload.role, payload.id)} LIMIT 1;`)
+      const [session] = await db.query<[Session]>(surql`SELECT * FROM ONLY session WHERE id = ${new RecordId('session', payload.sid)} AND user = ${new RecordId(payload.role, payload.id)} LIMIT 1;`)
       if(!session){ throw new HTTPException(401, { message: 'Session not found' }) }
       if(Date.now() > new Date(session.expires_at).valueOf()){ throw new HTTPException(401, { message: 'Your session has expired' }) }
     }
