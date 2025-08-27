@@ -197,7 +197,7 @@ organiser.post('/auth/finish', async c => {
 
   const [new_session] = await db.query<[Session]>(surql`CREATE ONLY session CONTENT ${session_content};`)
 
-  const token = await new SignJWT({ id: organiser_id, sid: new_session.id.id.toString(), role: 'attendee' }).setProtectedHeader({ alg: 'HS256' }).setIssuedAt().setExpirationTime(jwt_expiration).sign(encodedSecret)
+  const token = await new SignJWT({ id: organiser_id, sid: new_session.id.id.toString(), role: 'organiser' }).setProtectedHeader({ alg: 'HS256' }).setIssuedAt().setExpirationTime(jwt_expiration).sign(encodedSecret)
 
   if(connection){
     return c.json({
