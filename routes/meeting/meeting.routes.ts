@@ -76,9 +76,11 @@ meeting.get('/connection/:id', verify_request(['organiser', 'attendee']), async 
   return c.json({
     connection_id: connection.id,
     organiser_id: organiser.id,
+    organiser_name: organiser.name,
     organiser_key: organiser.public_key,
     organiser_keypair_salt: organiser.keypair_salt,
     attendee_id: attendee.id,
+    attendee_name: attendee.name,
     attendee_key: attendee.public_key,
     attendee_keypair_salt: attendee.keypair_salt,
     start_time: organiser.start_time,
