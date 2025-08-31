@@ -37,13 +37,14 @@ organiser.get('/', verify_request(['organiser']), async c => {
 
   const [organiser] = (await db.query<[PartialOrganiser]>(surql`
     SELECT
-    count(<-requests_to<-wave) as responses, 
-    count(<-connects_with<-wave) as connections,
+    count(<-requests_to<-attendee) as responses, 
+    count(->connects_with->attendee) as connections,
     id,
     start_time,
     end_time,
     meeting_tag,
-    created_at
+    created_at,
+    name
     FROM ONLY organiser WHERE id = ${new RecordId('organiser', user.id)} AND end_time >= time::now() LIMIT 1;
   `))
 
@@ -52,7 +53,6 @@ organiser.get('/', verify_request(['organiser']), async c => {
   const connection = (await db.query<[Connection[]]>(surql`
     SELECT id as connection_id, out.id as attendee_id, out.response_tag as response_tag, out.name as attendee_name FROM connects_with WHERE in.id = ${new RecordId('organiser', user.id)};
   `))[0][0]
-
   return c.json({...organiser, connection})
 })
 
