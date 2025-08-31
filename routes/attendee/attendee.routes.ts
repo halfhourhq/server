@@ -19,16 +19,18 @@ const attendee = new Hono<{ Variables: {user: {id: string, table: 'attendee' | '
 
 attendee.get('/', verify_request(['attendee']), async c => {
   const user = c.get('user')
+  const [request] = await db.query<[RequestsTo]>(surql`SELECT * FROM ONLY requests_to WHERE in = ${new RecordId('attendee', user.id)} LIMIT 1;`)
+  if(!request){ throw new HTTPException(404, { message: 'Attendee not valid' }) }
   const connection = (await db.query<[ConnectsWith[]]>(surql`SELECT * FROM connects_with WHERE out = ${new RecordId('attendee', user.id)};`))[0][0]
-  
-  const organiser = await db.select<Organiser>(connection.in)
+  const organiser = await db.select<Organiser>(request.out)
   const attendee = await db.select<Attendee>(new RecordId('attendee', user.id))
   return c.json({
     approved: connection ? true : false,
     connection_id: connection ? connection.id.id.toString() : null,
     organiser_name: organiser.name,
     meeting_tag: organiser.meeting_tag,
-    attendee_name: attendee.name,
+    name: attendee.name,
+    id: attendee.id,
     response_tag: attendee.response_tag,
     start_time: organiser.start_time,
     end_time: organiser.end_time
