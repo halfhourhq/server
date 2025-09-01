@@ -9,7 +9,7 @@ export type OpenedBy = {
 
 export type File = {
   id: RecordId<string>
-  organiser: RecordId<string>
+  connection: RecordId<string> // ConnectsWith
   b2_file_id: string
   downloads_count: number
   downloads_total: number
@@ -27,7 +27,7 @@ export type File = {
 export const file_table = {
   table: 'DEFINE TABLE file SCHEMAFULL;',
   fields: {
-    organiser: 'DEFINE FIELD organiser ON TABLE file TYPE record<organiser>;',
+    connection: 'DEFINE FIELD connection ON TABLE file TYPE record<connects_with>;',
     b2_file_id: 'DEFINE FIELD b2_file_id ON TABLE file TYPE string;',
     downloads_count: 'DEFINE FIELD downloads_count ON TABLE file TYPE number;',
     downloads_total: 'DEFINE FIELD downloads_total ON TABLE file TYPE number;',
