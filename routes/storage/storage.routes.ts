@@ -49,7 +49,7 @@ storage.get('/connection/:id', verify_request(['attendee', 'organiser']), async 
   if(organiser.end_time < new Date()){ throw new HTTPException(403, { message: 'The meeting is not longer active' }) }
 
   const [file, opened] = await db.query<[File, number]>(surql`
-    SELECT * FROM ONLY file WHERE id = ${new RecordId('file', file_id)} AND organiser = ${connection.in} LIMIT 1;
+    SELECT * FROM ONLY file WHERE id = ${new RecordId('file', file_id)} AND connection = ${connection.id} LIMIT 1;
     RETURN count(SELECT * FROM opened_by WHERE in = ${new RecordId('file', file_id)} AND out = ${new RecordId(user.table, user.id)});
   `)
   if(!file){ throw new HTTPException(400, { message: 'File not found' }) }
@@ -111,7 +111,7 @@ storage.post('/connection/:id', verify_request(['attendee', 'organiser']), async
 
   const [total_storage, organiser] = await db.query<[number, Organiser]>(
     surql`
-      RETURN math::sum(SELECT VALUE size FROM file WHERE organiser = ${connection.in});
+      RETURN math::sum(SELECT VALUE size FROM file WHERE connection = ${connection.id});
       SELECT * FROM ONLY organiser WHERE id = ${connection.in} LIMIT 1;
     `
   )
@@ -126,18 +126,20 @@ storage.post('/connection/:id', verify_request(['attendee', 'organiser']), async
     type: z.string({ message: 'Provide the content type of the file' }),
     name: z.string({ message: 'Provide the file name' }),
     size: z.number({ message: 'Provide the file size'}).min(1, 'The file size must be at least 1 byte').max(5*1024*2024, 'The file size cannot exceed 5 MB'),
-    file: z.instanceof(Uint8Array, { message: 'Provide the file' }).refine(arr => arr.length <= 5*1024*2024+16, { message: 'File cannot be bigger than 5MB' })
+    file: z.instanceof(ArrayBuffer, { message: 'Provide the file' }).refine(arr => arr.byteLength <= 5*1024*2024+16, { message: 'File cannot be bigger than 5MB' })
   })
 
-  const body = await c.req.formData()
+  const body = await c.req.parseBody()
+  const get_file = body.file as globalThis.File
+  console.log(await get_file.arrayBuffer())
   const validation = schema.safeParse({
-    sha1: body.get('sha1'), 
-    type: body.get('type'), 
-    name: body.get('name'),
-    size: body.get('size'),
-    file: body.get('file')
+    sha1: body.sha1, 
+    type: body.type, 
+    name: body.name,
+    size: +body.size,
+    file: await get_file.arrayBuffer()
   })
-
+  
   if(validation.success === false){ 
     const formatted = validation.error.format()
     let  message = ''
@@ -146,6 +148,7 @@ storage.post('/connection/:id', verify_request(['attendee', 'organiser']), async
     if(formatted.type){ formatted.type?._errors.forEach(val => message = `${val}`) }
     if(formatted.name){ formatted.name?._errors.forEach(val => message = `${val}`) }
     if(formatted.size){ formatted.size?._errors.forEach(val => message = `${val}`) }
+    if(formatted.file){ formatted.file?._errors.forEach(val => message = `${val}`) }
     throw new HTTPException(404, { message: message  }) 
   }
 
@@ -188,7 +191,7 @@ storage.post('/connection/:id', verify_request(['attendee', 'organiser']), async
   if(!uploading_res.ok){ throw new HTTPException(400, { message: uploading.message }) }
 
   const file_content: Partial<File> = {
-    organiser: connection.in,
+    connection: connection.id,
     b2_file_id: uploading.fileId,
     downloads_count: 0,
     downloads_total: 2,
