@@ -1,5 +1,5 @@
 export async function diceware(length: number): Promise<string[]> {
-  const wordstext = await Deno.readTextFile('./wordlist.json')
+  const wordstext = await Deno.readTextFile('./misc/wordlist.json')
   const words = JSON.parse(wordstext)
   const set: string[] = []
 
