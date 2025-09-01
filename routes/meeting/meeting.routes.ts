@@ -70,7 +70,7 @@ meeting.get('/connection/:id', verify_request(['organiser', 'attendee']), async 
   const attendee = await db.select<Attendee>(connection.out)
   const text = (await db.query<Array<ConversationWith[]>>(surql`SELECT * FROM conversation_with WHERE out = ${connection.id} ORDER created_at ASC LIMIT 100;`))[0]
   const [total_storage] = await db.query<[number]>(surql`
-    RETURN math::sum(SELECT VALUE size FROM file WHERE organiser = ${organiser.id} AND is_complete = ${true});
+    RETURN math::sum(SELECT VALUE size FROM file WHERE connection = ${connection.id} AND is_complete = ${true});
   `).catch(error => { throw new HTTPException(404, { message: error.message }) })
 
   return c.json({
@@ -119,18 +119,11 @@ meeting.get('/realtime/:id', verify_request(['organiser', 'attendee']), async (c
   if(organiser.end_time < new Date()){ throw new HTTPException(403, { message: 'The connection is not longer active' }) }
   await next()
 }, upgradeWebSocket(async c => {
-  const user:  {id: string, table: 'canal' | 'wave', session: string} = c.get('user')
+  const user:  {id: string, table: 'organiser' | 'attendee', session: string} = c.get('user')
 
-  let user_id: RecordId<string>
+  const user_id = new RecordId(user.table, user.id)
+
   const meet = await db.select<ConnectsWith>(new RecordId('connects_with', c.req.param('id')))
-
-  if(user.table === 'canal'){
-    user_id = meet.out
-  } else {
-    user_id = meet.in
-  }
-
-  const organiser = await db.select<Organiser>(meet.in)
 
   const conversation = conversations.get(meet.id.toString()) ?? new Map<string, WSContext<WebSocket>>()
   const messages = all_messages.get(meet.id.toString()) ?? new Set<ConversationWith>()
@@ -162,7 +155,7 @@ meeting.get('/realtime/:id', verify_request(['organiser', 'attendee']), async (c
 
               const storage = (
                 await db.query<[number]>(surql`
-                  RETURN math::sum(SELECT VALUE size FROM file WHERE organiser = ${organiser.id} AND is_complete = ${true});
+                  RETURN math::sum(SELECT VALUE size FROM file WHERE connection = ${meet.id} AND is_complete = ${true});
                 `).catch(_error => { 
                   ws.send(JSON.stringify({
                     type: 'error',
@@ -215,7 +208,7 @@ meeting.get('/realtime/:id', verify_request(['organiser', 'attendee']), async (c
                 })
               })
             }
-
+            console.log(content)
             break;
 
           }
