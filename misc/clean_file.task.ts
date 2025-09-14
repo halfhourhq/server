@@ -2,7 +2,8 @@ import { CronJob } from "cron"
 import { db } from "../database/config.ts"
 import { surql } from "@surrealdb/surrealdb"
 import { File } from "../routes/storage/storage.config.ts"
-import { HTTPException } from "@hono/hono/http-exception"
+import { Mutex } from "async-mutex"
+import pino from "pino"
 import { encodeBase64 } from "@std/encoding"
 
 // const bucket = Deno.env.get('BB_BUCKET_ID')
@@ -15,26 +16,70 @@ const keys = () => {
   return encodeBase64(`${id}:${key}`)
 }
 
-export const clean_file = CronJob.from({
-  cronTime: '0 0 * * * *',
-  onTick: async function () {
-    try {
-      const [files] = await db.query<[File[]]>(surql`DELETE file WHERE expires_at < time::now()-5m RETURN BEFORE;`).catch(err => {
-        throw new HTTPException(400, { message: err as string })
-      })
+const mutex = new Mutex()
+const logger = pino()
+let last_run: Date | null = null
+let last_duration: number = 0
+let last_success: boolean = false
 
-      const b2_auth_res = await fetch(endpoint+'/b2api/v4/b2_authorize_account', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Basic ${keys()}`
-        }
-      })
-      const b2_auth = await b2_auth_res.json()
-      if(!b2_auth_res.ok){throw new HTTPException(400, { message:  b2_auth.message })}
+export const clean_file = CronJob.from({
+  cronTime: '0 * * * * *',
+  onTick: async function () {
+    if(mutex.isLocked()){ 
+      logger.warn('File cleanup in progress, skipping this cycle')
+      return 
+    }
+
+    await mutex.runExclusive(async () => {
+      await perform()
+    })
+  }
+})
+
+export const status_file = () => ({
+  is_running: mutex.isLocked(),
+  last_duration,
+  last_run,
+  last_success
+})
+
+async function perform(){
+  const start_time = performance.now()
+  try {
+    const [expired_files] = await db.query<[File[]]>(surql`SELECT * FROM file WHERE expires_at < time::now()-5m;`)
+
+    if (expired_files.length === 0) {
+      logger.info('File cleanup found no expired files')
+      last_run = new Date()
+      last_duration = Math.round(performance.now() - start_time)
+      last_success = true
+      return
+    }
+
+    const b2_auth_res = await fetch(endpoint+'/b2api/v4/b2_authorize_account', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Basic ${keys()}`
+      }
+    })
+    const b2_auth = await b2_auth_res.json()
+    if(!b2_auth_res.ok){
+      logger.error(`File cleanup storage error: ${b2_auth.message}`)
+      last_run = new Date()
+      last_duration = Math.round(performance.now() - start_time)
+      last_success = true
+      return
+    }
+
+    const BATCH_SIZE = 50;
+    let deleted_count = 0;
+    
+    for (let i = 0; i < expired_files.length; i += BATCH_SIZE) {
+      const batch = expired_files.slice(i, i + BATCH_SIZE);
       
-      await Promise.all(
-        files.map(async file => {
-          const b2_delete_res = await fetch(endpoint+'/b2api/v4/b2_delete_file_version', {
+      for await (const file of batch) {
+        try {
+          await fetch(endpoint+'/b2api/v4/b2_delete_file_version', {
             method: 'POST',
             headers: {
               'Authorization': b2_auth.authorizationToken
@@ -44,12 +89,27 @@ export const clean_file = CronJob.from({
               fileId: file.b2_file_id
             })
           })
-          const b2_delete = await b2_delete_res.json()
-          if(!b2_delete_res.ok){throw new HTTPException(404, { message:  b2_delete.message })}
-        })
-      )
-    } catch(err) {
-      console.log(err)
+          await db.delete(file.id)
+          deleted_count++;
+        } catch (error) {
+          logger.warn(`Failed to delete file ${file.id}, error: ${error}`);
+        }
+      }
+      
+      if (i + BATCH_SIZE < expired_files.length) {
+        await new Promise(resolve => setTimeout(resolve, 100))
+      }
     }
+    
+    last_run = new Date()
+    last_duration = Math.round(performance.now() - start_time)
+    last_success = true
+    logger.info(`File cleanup complete: count = ${deleted_count} & duration = ${last_duration}`)
+  } catch(err) {
+    logger.error(`File cleanup failed: ${err}`)
+    last_run = new Date()
+    last_duration = Math.round(performance.now() - start_time)
+    last_success = false
+    throw err
   }
-})
+}
