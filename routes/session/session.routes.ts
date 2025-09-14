@@ -3,7 +3,7 @@ import { Hono } from "@hono/hono"
 import { Session } from "./session.config.ts"
 import { RecordId } from "@surrealdb/surrealdb"
 import { db } from "../../database/config.ts"
-import { verify_request } from "../../misc/verify_request.util.ts";
+import { verify_request } from "../../misc/verify_request.util.ts"
 
 const session = new Hono<{ Variables: {user: {id: string, table: 'attendee' | 'organiser', session: string}} }>()
 
