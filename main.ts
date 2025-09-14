@@ -8,6 +8,7 @@ import session from "./routes/session/session.routes.ts"
 import storage from "./routes/storage/storage.routes.ts"
 import attendee from "./routes/attendee/attendee.routes.ts"
 import organiser from "./routes/organiser/organiser.routes.ts"
+import statistics from "./routes/statistics/statistics.routes.ts"
 import { clean_organiser } from "./misc/clean_organiser.task.ts"
 import { clean_attendee } from "./misc/clean_attendee.task.ts"
 import { clean_file } from "./misc/clean_file.task.ts"
@@ -52,6 +53,7 @@ app.route('/organiser', organiser)
 app.route('/meeting', meeting)
 app.route('/session', session)
 app.route('/storage', storage)
+app.route('/statistics', statistics)
 
 const port = Number(Deno.env.get('PORT')) ?? 6002
 Deno.serve({port: port}, app.fetch)
