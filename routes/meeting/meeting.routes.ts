@@ -9,7 +9,7 @@ import { db } from "../../database/config.ts"
 import { Attendee } from "../attendee/attendee.config.ts"
 import { ConnectsWith, ConversationWith, Message } from "./meeting.config.ts"
 import { WSContext } from "@hono/hono/ws"
-import { broadcast_message } from "../../misc/broadcast_message.util.ts";
+import { broadcast_message } from "../../misc/broadcast_message.util.ts"
 
 const meeting = new Hono<{ Variables: {user: {id: string, table: 'attendee' | 'organiser', session: string}} }>()
 
