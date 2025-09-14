@@ -8,6 +8,10 @@ import session from "./routes/session/session.routes.ts"
 import storage from "./routes/storage/storage.routes.ts"
 import attendee from "./routes/attendee/attendee.routes.ts"
 import organiser from "./routes/organiser/organiser.routes.ts"
+import { clean_organiser } from "./misc/clean_organiser.task.ts"
+import { clean_attendee } from "./misc/clean_attendee.task.ts"
+import { clean_file } from "./misc/clean_file.task.ts"
+import { clean_session } from "./misc/clean_session.task.ts"
 
 const app = new Hono()
 
@@ -15,6 +19,11 @@ await startup()
 
 const client = Deno.env.get('CLIENT_URL')
 if(!client){ throw new Error('Provide a client host string') }
+
+clean_attendee.start()
+clean_file.start() 
+clean_organiser.start()
+clean_session.start()
 
 app.use(logger())
 app.use((c, next) => {
