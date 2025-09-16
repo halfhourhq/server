@@ -38,11 +38,11 @@ statistics.get('/meetings', async c => {
     RETURN math::sum(SELECT VALUE count(id) as individual FROM connects_with WHERE in.start_time < time::now());
     RETURN math::sum(SELECT VALUE count(id) as individual FROM organiser WHERE start_time < time::now());
     RETURN math::sum(SELECT VALUE count(id) as individual FROM organiser WHERE start_time > time::now() AND end_time < time::now());
-    RETURN math::median( (SELECT count(id) as organiser, out FROM requests_to GROUP BY out).organiser );
-    RETURN math::mode( (SELECT count(id) as organiser, out FROM requests_to GROUP BY out).organiser );
-    RETURN math::max( (SELECT count(id) as organiser, out FROM requests_to GROUP BY out).organiser );
+    RETURN math::median((SELECT count(id) as organiser, out FROM requests_to GROUP BY out).organiser);
+    RETURN math::mode((SELECT count(id) as organiser, out FROM requests_to GROUP BY out).organiser);
+    RETURN math::max((SELECT count(id) as organiser, out FROM requests_to GROUP BY out).organiser);
   `)
-
+  
   return c.json({
     total_storage, 
     total_messages, 
@@ -50,9 +50,9 @@ statistics.get('/meetings', async c => {
     total_upcoming_connections, 
     total_upcoming_invites, 
     total_active_invites,
-    median_responses,
-    mode_responses,
-    max_responses
+    median_responses: median_responses ? median_responses : null,
+    mode_responses: mode_responses ? mode_responses : null,
+    max_responses: max_responses ? max_responses : null
   })
 })
 
