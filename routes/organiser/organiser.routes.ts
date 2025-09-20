@@ -12,10 +12,11 @@ import { Organiser } from "../organiser/organiser.config.ts"
 import { generate_tag } from "../../misc/generate_tag.util.ts"
 import { SignJWT } from "@panva/jose"
 import { Session } from "../session/session.config.ts"
+import { rate_limiter } from "../../misc/rate_limiter.util.ts";
 
 const organiser = new Hono<{ Variables: {user: {id: string, table: 'attendee' | 'organiser', session: string}} }>()
 
-organiser.get('/', verify_request(['organiser']), async c => {
+organiser.get('/', rate_limiter, verify_request(['organiser']), async c => {
   const user = c.get('user')
 
   type PartialOrganiser = {
@@ -56,7 +57,7 @@ organiser.get('/', verify_request(['organiser']), async c => {
   return c.json({...organiser, connection})
 })
 
-organiser.post('/', async c => {
+organiser.post('/', rate_limiter, async c => {
   const schema = z.object({
     start_time: z.preprocess((arg) => ( typeof arg === 'string' || arg instanceof Date ? new Date(arg) : undefined ), z.date()).refine(val => {
       return val > new Date()
@@ -117,7 +118,7 @@ organiser.post('/', async c => {
   })
 })
 
-organiser.post('/auth/start', async c => {
+organiser.post('/auth/start', rate_limiter, async c => {
   const schema = z.object({
     meeting_tag: z.string({message: 'Meeting tag is required'})
   })
@@ -144,7 +145,7 @@ organiser.post('/auth/start', async c => {
   })
 })
 
-organiser.post('/auth/finish', async c => {
+organiser.post('/auth/finish', rate_limiter, async c => {
   const encoder = new TextEncoder()
   const schema = z.object({
     password_hash: z.string({message: 'Password hash is required'}),

@@ -13,11 +13,12 @@ import { generate_tag } from "../../misc/generate_tag.util.ts"
 import { Attendee, RequestsTo } from "./attendee.config.ts"
 import { SignJWT } from "@panva/jose"
 import { Session } from "../session/session.config.ts"
+import { rate_limiter } from "../../misc/rate_limiter.util.ts";
 
 const attendee = new Hono<{ Variables: {user: {id: string, table: 'attendee' | 'organiser', session: string}} }>()
 
 
-attendee.get('/', verify_request(['attendee']), async c => {
+attendee.get('/', rate_limiter, verify_request(['attendee']), async c => {
   const user = c.get('user')
   const [request] = await db.query<[RequestsTo]>(surql`SELECT * FROM ONLY requests_to WHERE in = ${new RecordId('attendee', user.id)} LIMIT 1;`)
   if(!request){ throw new HTTPException(404, { message: 'Attendee not valid' }) }
@@ -37,7 +38,7 @@ attendee.get('/', verify_request(['attendee']), async c => {
   })
 })
 
-attendee.post('/', async c => {
+attendee.post('/', rate_limiter, async c => {
   const schema = z.object({
     password_hash: z.string({message: 'Password hash is required'}),
     password_salt: z.string({ message: 'Password salt is requred' }),
@@ -96,7 +97,7 @@ attendee.post('/', async c => {
   })
 })
 
-attendee.post('/auth/start', async c => {
+attendee.post('/auth/start', rate_limiter, async c => {
   const schema = z.object({
     response_tag: z.string({message: 'Response tag is required'})
   })
@@ -136,7 +137,7 @@ attendee.post('/auth/start', async c => {
   })
 })
 
-attendee.post('/auth/finish', async c => {
+attendee.post('/auth/finish', rate_limiter, async c => {
   const encoder = new TextEncoder()
   const schema = z.object({
     password_hash: z.string({message: 'Password hash is required'}),
