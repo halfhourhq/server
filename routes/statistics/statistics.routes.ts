@@ -4,10 +4,11 @@ import { status_attendee } from "../../misc/clean_attendee.task.ts"
 import { status_organiser } from "../../misc/clean_organiser.task.ts"
 import { status_session } from "../../misc/clean_session.task.ts"
 import { db } from "../../database/config.ts"
+import { rate_limiter } from "../../misc/rate_limiter.util.ts";
 
 const statistics = new Hono<{ Variables: {user: {id: string, table: 'attendee' | 'organiser', session: string}} }>()
 
-statistics.get('/jobs', c => {
+statistics.get('/jobs', rate_limiter, c => {
   const files = status_file()
   const attendees = status_attendee()
   const organisers = status_organiser()
@@ -20,7 +21,7 @@ statistics.get('/jobs', c => {
   })
 })
 
-statistics.get('/meetings', async c => {
+statistics.get('/meetings', rate_limiter, async c => {
   const [
     total_storage, 
     total_messages, 
