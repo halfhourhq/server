@@ -35,10 +35,10 @@ statistics.get('/meetings', rate_limiter, async c => {
   ] = await db.query<[number, number, number, number, number, number, number, number, number]>(`
     RETURN math::sum(SELECT VALUE size FROM file WHERE is_complete = ${true});
     RETURN math::sum(SELECT VALUE count(id) as individual FROM conversation_with);
-    RETURN math::sum(SELECT VALUE count(id) as individual FROM connects_with WHERE in.start_time > time::now() AND in.end_time < time::now());
-    RETURN math::sum(SELECT VALUE count(id) as individual FROM connects_with WHERE in.start_time < time::now());
-    RETURN math::sum(SELECT VALUE count(id) as individual FROM organiser WHERE start_time < time::now());
-    RETURN math::sum(SELECT VALUE count(id) as individual FROM organiser WHERE start_time > time::now() AND end_time < time::now());
+    RETURN math::sum(SELECT VALUE count(id) as individual FROM connects_with WHERE in.start_time < time::now() AND in.end_time > time::now());
+    RETURN math::sum(SELECT VALUE count(id) as individual FROM connects_with WHERE in.start_time > time::now());
+    RETURN math::sum(SELECT VALUE count(id) as individual FROM organiser WHERE start_time > time::now());
+    RETURN math::sum(SELECT VALUE count(id) as individual FROM organiser WHERE start_time < time::now() AND end_time > time::now());
     RETURN math::median((SELECT count(id) as organiser, out FROM requests_to GROUP BY out).organiser);
     RETURN math::mode((SELECT count(id) as organiser, out FROM requests_to GROUP BY out).organiser);
     RETURN math::max((SELECT count(id) as organiser, out FROM requests_to GROUP BY out).organiser);
