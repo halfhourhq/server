@@ -26,7 +26,8 @@ organiser.get('/', rate_limiter, verify_request(['organiser']), async c => {
     end_time: Date,
     created_at: Date,
     connections: number,
-    responses: number
+    responses: number,
+    name: string
   }
 
   type Connection = {
@@ -61,7 +62,7 @@ organiser.post('/', rate_limiter, async c => {
   const schema = z.object({
     start_time: z.preprocess((arg) => ( typeof arg === 'string' || arg instanceof Date ? new Date(arg) : undefined ), z.date()).refine(val => {
       return val > new Date()
-    }, { message: 'You cannot schedule a bridge to a past date' }).refine(val => val <= new Date( Date.now() + 1000*60*60*24*90 ), {message: 'You cannot schedule a bridge more than 90 days in the future'}),
+    }, { message: 'You cannot schedule a meeting to a past date' }).refine(val => val <= new Date( Date.now() + 1000*60*60*24*7 ), {message: 'You cannot schedule a meeting more than 7 days into the future'}),
     public_key: z.string({message: 'Public key is required'}),
     keypair_salt: z.string({message: 'Key pair salt is required'}),
     password_hash: z.string({message: 'Password hash is required'}),
