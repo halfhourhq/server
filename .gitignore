@@ -1,3 +1,4 @@
 .env
 .DS_Store
 database/kv_data/*
+!database/kv_data/.gitkeep
