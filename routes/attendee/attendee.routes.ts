@@ -18,7 +18,7 @@ import { rate_limiter } from "../../misc/rate_limiter.util.ts";
 const attendee = new Hono<{ Variables: {user: {id: string, table: 'attendee' | 'organiser', session: string}} }>()
 
 
-attendee.get('/', rate_limiter, verify_request(['attendee']), async c => {
+attendee.get('/', verify_request(['attendee']), async c => {
   const user = c.get('user')
   const [request] = await db.query<[RequestsTo]>(surql`SELECT * FROM ONLY requests_to WHERE in = ${new RecordId('attendee', user.id)} LIMIT 1;`)
   if(!request){ throw new HTTPException(404, { message: 'Attendee not valid' }) }
