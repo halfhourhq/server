@@ -67,13 +67,13 @@ attendee.post('/', rate_limiter, async c => {
   if(validation.success === false){ 
     const formatted = validation.error.format()
     let message: string = ''
-    formatted._errors.forEach(val => message = `${val}; `)
-    if(formatted.meeting_tag){ formatted.meeting_tag._errors.forEach(val => message = `${val}`) }
-    if(formatted.password_hash){ formatted.password_hash?._errors.forEach(val => message = `${val}`) }
-    if(formatted.password_salt){ formatted.password_salt?._errors.forEach(val => message = `${val}`) }
-    if(formatted.public_key){ formatted.public_key?._errors.forEach(val => message = `${val}`) }
-    if(formatted.keypair_salt){ formatted.keypair_salt?._errors.forEach(val => message = `${val}`) }
-    if(formatted.name){ formatted.name?._errors.forEach(val => message = `${val}`) }
+    formatted._errors.reverse().forEach(val => message = `${val}; `)
+    if(formatted.meeting_tag){ formatted.meeting_tag._errors.reverse().forEach(val => message = `${val}`) }
+    if(formatted.password_hash){ formatted.password_hash?._errors.reverse().forEach(val => message = `${val}`) }
+    if(formatted.password_salt){ formatted.password_salt?._errors.reverse().forEach(val => message = `${val}`) }
+    if(formatted.public_key){ formatted.public_key?._errors.reverse().forEach(val => message = `${val}`) }
+    if(formatted.keypair_salt){ formatted.keypair_salt?._errors.reverse().forEach(val => message = `${val}`) }
+    if(formatted.name){ formatted.name?._errors.reverse().forEach(val => message = `${val}`) }
     throw new HTTPException(404, { message: message  }) 
   }
 
@@ -114,8 +114,8 @@ attendee.post('/auth/start', rate_limiter, async c => {
   if(validation.success === false){ 
     const formatted = validation.error.format()
     let message: string = ''
-    formatted._errors.forEach(val => message = `${val}`)
-    if(formatted.response_tag){ formatted.response_tag?._errors.forEach(val => message = `${val}`) }
+    formatted._errors.reverse().forEach(val => message = `${val}`)
+    if(formatted.response_tag){ formatted.response_tag?._errors.reverse().forEach(val => message = `${val}`) }
     throw new HTTPException(404, { message: message  }) 
   }
 
@@ -156,9 +156,9 @@ attendee.post('/auth/finish', rate_limiter, async c => {
   if(validation.success === false){ 
     const formatted = validation.error.format()
     let message: string = ''
-    formatted._errors.forEach(val => message += `${val}; `)
-    if(formatted.response_tag){ formatted.response_tag?._errors.forEach(val => message += `${val}; `) }
-    if(formatted.password_hash){ formatted.password_hash?._errors.forEach(val => message += `${val}; `) }
+    formatted._errors.reverse().forEach(val => message += `${val}; `)
+    if(formatted.response_tag){ formatted.response_tag?._errors.reverse().forEach(val => message += `${val}; `) }
+    if(formatted.password_hash){ formatted.password_hash?._errors.reverse().forEach(val => message += `${val}; `) }
     throw new HTTPException(404, { message: message  }) 
   }
 
