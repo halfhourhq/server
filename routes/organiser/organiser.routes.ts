@@ -67,7 +67,13 @@ organiser.post('/', rate_limiter, async c => {
     keypair_salt: z.string({message: 'Key pair salt is required'}),
     password_hash: z.string({message: 'Password hash is required'}),
     password_salt: z.string({ message: 'Password salt is requred' }),
-    name: z.string({ message: 'Name is required' })
+    name: z.string({ message: 'Name is required' }).refine(val => { 
+      return val.split(' ').length === 1 
+    }, { message: 'Name must be a single word' }).refine(val => {
+      return val.length <= 20
+    }, { message: 'Name cannot be longer than 20 characters' }).refine(val => {
+      return /^[a-z]+$/i.test(val)
+    }, {message: 'Name must contain letters only'})
   })
   
   const body = await c.req.json()
@@ -84,13 +90,13 @@ organiser.post('/', rate_limiter, async c => {
   if(validation.success === false){ 
     const formatted = validation.error.format()
     let message: string = ''
-    formatted._errors.forEach(val => message = `${val}; `)
-    if(formatted.start_time){ formatted.start_time?._errors.forEach(val => message = `${val}`) }
-    if(formatted.public_key){ formatted.public_key?._errors.forEach(val => message = `${val}`) }
-    if(formatted.keypair_salt){ formatted.keypair_salt?._errors.forEach(val => message = `${val}`) }
-    if(formatted.password_hash){ formatted.password_hash?._errors.forEach(val => message = `${val}`) }
-    if(formatted.password_salt){ formatted.password_salt?._errors.forEach(val => message = `${val}`) }
-    if(formatted.name){ formatted.name?._errors.forEach(val => message = `${val}`) }
+    formatted._errors.reverse().forEach(val => message = `${val}; `)
+    if(formatted.start_time){ formatted.start_time?._errors.reverse().forEach(val => message = `${val}`) }
+    if(formatted.public_key){ formatted.public_key?._errors.reverse().forEach(val => message = `${val}`) }
+    if(formatted.keypair_salt){ formatted.keypair_salt?._errors.reverse().forEach(val => message = `${val}`) }
+    if(formatted.password_hash){ formatted.password_hash?._errors.reverse().forEach(val => message = `${val}`) }
+    if(formatted.password_salt){ formatted.password_salt?._errors.reverse().forEach(val => message = `${val}`) }
+    if(formatted.name){ formatted.name?._errors.reverse().forEach(val => message = `${val}`) }
     throw new HTTPException(404, { message: message  }) 
   }
 
@@ -130,8 +136,8 @@ organiser.post('/auth/start', rate_limiter, async c => {
   if(validation.success === false){ 
     const formatted = validation.error.format()
     let message: string = ''
-    formatted._errors.forEach(val => message = `${val}`)
-    if(formatted.meeting_tag){ formatted.meeting_tag?._errors.forEach(val => message = `${val}`) }
+    formatted._errors.reverse().forEach(val => message = `${val}`)
+    if(formatted.meeting_tag){ formatted.meeting_tag?._errors.reverse().forEach(val => message = `${val}`) }
     throw new HTTPException(404, { message: message  }) 
   }
 
@@ -159,9 +165,9 @@ organiser.post('/auth/finish', rate_limiter, async c => {
   if(validation.success === false){ 
     const formatted = validation.error.format()
     let message: string = ''
-    formatted._errors.forEach(val => message = `${val}`)
-    if(formatted.meeting_tag){ formatted.meeting_tag?._errors.forEach(val => message = `${val}`) }
-    if(formatted.password_hash){ formatted.password_hash?._errors.forEach(val => message = `${val}`) }
+    formatted._errors.reverse().forEach(val => message = `${val}`)
+    if(formatted.meeting_tag){ formatted.meeting_tag?._errors.reverse().forEach(val => message = `${val}`) }
+    if(formatted.password_hash){ formatted.password_hash?._errors.reverse().forEach(val => message = `${val}`) }
     throw new HTTPException(404, { message: message  }) 
   }
 

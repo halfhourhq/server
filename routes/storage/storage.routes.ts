@@ -143,12 +143,12 @@ storage.post('/connection/:id', verify_request(['attendee', 'organiser']), async
   if(validation.success === false){ 
     const formatted = validation.error.format()
     let  message = ''
-    formatted._errors.forEach(val => message = val)
-    if(formatted.sha1){ formatted.sha1?._errors.forEach(val => message = `${val}`) }
-    if(formatted.type){ formatted.type?._errors.forEach(val => message = `${val}`) }
-    if(formatted.name){ formatted.name?._errors.forEach(val => message = `${val}`) }
-    if(formatted.size){ formatted.size?._errors.forEach(val => message = `${val}`) }
-    if(formatted.file){ formatted.file?._errors.forEach(val => message = `${val}`) }
+    formatted._errors.reverse().forEach(val => message = val)
+    if(formatted.sha1){ formatted.sha1?._errors.reverse().forEach(val => message = `${val}`) }
+    if(formatted.type){ formatted.type?._errors.reverse().forEach(val => message = `${val}`) }
+    if(formatted.name){ formatted.name?._errors.reverse().forEach(val => message = `${val}`) }
+    if(formatted.size){ formatted.size?._errors.reverse().forEach(val => message = `${val}`) }
+    if(formatted.file){ formatted.file?._errors.reverse().forEach(val => message = `${val}`) }
     throw new HTTPException(404, { message: message  }) 
   }
 
