@@ -45,7 +45,13 @@ attendee.post('/', rate_limiter, async c => {
     meeting_tag: z.string({message: 'Meeting tag is required'}),
     public_key: z.string({message: 'Public key is required'}),
     keypair_salt: z.string({message: 'Key pair salt is required'}),
-    name: z.string({ message: 'Name is required' })
+    name: z.string({ message: 'Name is required' }).refine(val => { 
+      return val.split(' ').length === 1 
+    }, { message: 'Name must be a single word' }).refine(val => {
+      return val.length <= 20
+    }, { message: 'Name cannot be longer than 20 characters' }).refine(val => {
+      return /^[a-z]+$/i.test(val)
+    }, {message: 'Name must contain letters only'})
   })
   
   const body = await c.req.json()

@@ -67,7 +67,13 @@ organiser.post('/', rate_limiter, async c => {
     keypair_salt: z.string({message: 'Key pair salt is required'}),
     password_hash: z.string({message: 'Password hash is required'}),
     password_salt: z.string({ message: 'Password salt is requred' }),
-    name: z.string({ message: 'Name is required' })
+    name: z.string({ message: 'Name is required' }).refine(val => { 
+      return val.split(' ').length === 1 
+    }, { message: 'Name must be a single word' }).refine(val => {
+      return val.length <= 20
+    }, { message: 'Name cannot be longer than 20 characters' }).refine(val => {
+      return /^[a-z]+$/i.test(val)
+    }, {message: 'Name must contain letters only'})
   })
   
   const body = await c.req.json()
