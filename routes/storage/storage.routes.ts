@@ -10,7 +10,6 @@ import { z }  from "zod"
 import { encodeBase64 } from "@std/encoding"
 import { sanitise_name } from "../../misc/sanitise_name.util.ts"
 import { File } from "./storage.config.ts"
-import { rate_limiter } from "../../misc/rate_limiter.util.ts";
 
 const bucket = Deno.env.get('BB_BUCKET_ID')
 const endpoint = Deno.env.get('BB_ENDPOINT_API')
@@ -24,7 +23,7 @@ const keys = () => {
 
 const storage = new Hono<{ Variables: {user: {id: string, table: 'attendee' | 'organiser', session: string}} }>()
 
-storage.get('/connection/:id', rate_limiter, verify_request(['attendee', 'organiser']), async c => {
+storage.get('/connection/:id', verify_request(['attendee', 'organiser']), async c => {
   const user = c.get('user')
   const connection_id = c.req.param('id')
   const file_id = c.req.query('file')
@@ -92,7 +91,7 @@ storage.get('/connection/:id', rate_limiter, verify_request(['attendee', 'organi
   })
 })
 
-storage.post('/connection/:id', rate_limiter, verify_request(['attendee', 'organiser']), async c => {
+storage.post('/connection/:id', verify_request(['attendee', 'organiser']), async c => {
   const user = c.get('user')
   const id = c.req.param('id')
   const storage_limit = ( 20 * (1024 ** 2) )

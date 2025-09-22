@@ -14,9 +14,9 @@ export async function rate_limiter(c: Context, next: Next) {
     await kv.set(['requests', address], { requests: 1, expires_at: Date.now()+(1000*60) }, { expireIn: 1000*60 })
   } else if(ip.expires_at < Date.now()){
     await kv.set(['requests', address], { requests: 1, expires_at: Date.now()+(1000*60) }, { expireIn: 1000*60 })
-  } else if(ip.expires_at >= Date.now() && ip.requests >= 20){
-    throw new HTTPException(429, { message: 'You have reached the maximum 20 requests per minute' })
-  } else if(ip.expires_at >= Date.now() && ip.requests < 20){
+  } else if(ip.expires_at >= Date.now() && ip.requests >= 10){
+    throw new HTTPException(429, { message: 'You have reached the maximum 10 requests per minute' })
+  } else if(ip.expires_at >= Date.now() && ip.requests < 10){
     await kv.set(['requests', address], { requests: ++ip.requests, expires_at: ip.expires_at })
   }
   await next()

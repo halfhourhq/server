@@ -16,7 +16,7 @@ import { rate_limiter } from "../../misc/rate_limiter.util.ts";
 
 const organiser = new Hono<{ Variables: {user: {id: string, table: 'attendee' | 'organiser', session: string}} }>()
 
-organiser.get('/', rate_limiter, verify_request(['organiser']), async c => {
+organiser.get('/', verify_request(['organiser']), async c => {
   const user = c.get('user')
 
   type PartialOrganiser = {

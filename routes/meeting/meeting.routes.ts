@@ -10,14 +10,13 @@ import { Attendee } from "../attendee/attendee.config.ts"
 import { ConnectsWith, ConversationWith, Message } from "./meeting.config.ts"
 import { WSContext } from "@hono/hono/ws"
 import { broadcast_message } from "../../misc/broadcast_message.util.ts"
-import { rate_limiter } from "../../misc/rate_limiter.util.ts";
 
 const meeting = new Hono<{ Variables: {user: {id: string, table: 'attendee' | 'organiser', session: string}} }>()
 
 const conversations = new Map<string, Map<string, WSContext<WebSocket>>>()
 const all_messages = new Map<string, Set<ConversationWith>>()
 
-meeting.post('/connect', rate_limiter, verify_request(['organiser']), async c => {
+meeting.post('/connect', verify_request(['organiser']), async c => {
   const user = c.get('user')
   const schema = z.string({message: 'Response tag is required'})
 
@@ -50,7 +49,7 @@ meeting.post('/connect', rate_limiter, verify_request(['organiser']), async c =>
   return c.json({connection: 'successful'})
 })
 
-meeting.get('/connection/:id', rate_limiter, verify_request(['organiser', 'attendee']), async c => {
+meeting.get('/connection/:id', verify_request(['organiser', 'attendee']), async c => {
   const user = c.get('user')
   const connection_id = c.req.param('id')
   let query: PreparedQuery
@@ -94,7 +93,7 @@ meeting.get('/connection/:id', rate_limiter, verify_request(['organiser', 'atten
   })
 })
 
-meeting.get('/realtime/:id', rate_limiter, verify_request(['organiser', 'attendee']), async (c, next) => {
+meeting.get('/realtime/:id', verify_request(['organiser', 'attendee']), async (c, next) => {
   const user = c.get('user')
   const connection_id = c.req.param('id')
   let query: PreparedQuery
